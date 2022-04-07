@@ -1,10 +1,21 @@
+//import libraries
 const puppet = require('puppeteer');
 const fs = require('fs');
 const { deepStrictEqual } = require('assert');
 
-var str = ''
+//create buses array to store Bus objects
+var buses = [];
+
+function Bus() {
+  this.busno = '';
+  this.busname = '';
+  this.busdet = '';
+  this.busariv = '';
+}
+
 
 async function scrapeProduct(url) {
+  //launch page
   const browser = await puppet.launch();
   const page = await browser.newPage();
   await page.setViewport({
@@ -14,31 +25,88 @@ async function scrapeProduct(url) {
   await page.goto(url);
 
 
-  
+  //wait for elements to load and use querySelectorAll
   await page.waitForSelector('.arivals li .busariv');
-  const busno = await page.$$('.arivals li');
-  //const busname = await page.$$('.arivals .busname');
-  //const busdet = await page.$$('.arivals .busdet');
-  //const busariv = await page.$$('.arivals .busariv');
+  var busno = await page.$$('.arivals li .busno');
+  var busname = await page.$$('.arivals li .busname')
+  var busdet = await page.$$('.arivals li .busdet');
+  var busariv = await page.$$('.arivals li .busariv');
   
+  //create Bus objects in the buses array
+  for(let y=0;y<busno.length;y++) {
+    eval('var ' + 'bus' + y + '= new Bus();')
+    eval('buses.push( bus' + y +');')
+  }
+
+  //loop through the elements and store them in Bus objects
   for(let i=0;i<busno.length;i++) {
-    const row = busno[i]
+    var no = busno[i]
+    var name = busname[i]
+    var det = busdet[i]
+    var ariv = busariv[i]
 
+    var l1 = await no.getProperty('textContent')
+    var r1 = await l1.jsonValue()
+    buses[i].busno = await r1;
 
-    const label = await row.getProperty('textContent')
-    const raw = await label.jsonValue()
+    var l2 = await name.getProperty('textContent')
+    var r2 = await l2.jsonValue()
+    buses[i].busname = await r2;
+    
+    var l3 = await det.getProperty('textContent')
+    var r3 = await l3.jsonValue()
+    buses[i].busdet = await r3;
+
+    var l4 = await ariv.getProperty('textContent')
+    var r4 = await l4.jsonValue()
+    buses[i].busariv = await r4;
 
     
-    str += await raw + '\n'
+    
 
 
   }
-  console.log(str)
-
-  
 
   await browser.close();
-
 }
 
-scrapeProduct('https://oasth.gr/#el/stopinfo/screen/1043/')
+//use main to store data in txt files and catch errors so that the loop doesn't stop
+async function main(){
+
+  await scrapeProduct('https://oasth.gr/#el/stopinfo/screen/1043/')
+
+  //store all parsed data
+  var alldata = JSON.stringify(buses,null,' ')
+  fs.appendFile('alldata.txt',new Date() + alldata,function(err,result) {
+    if(err) console.error(err);
+  })
+
+  //store 24 data exclusively
+  try {
+    var selectedbus = '23'
+    var bus24 = buses.find(element => element.busno === selectedbus)
+    var data24 = '\n' + new Date() + ' --- ' + bus24.busno + ' '  + bus24.busdet + ' ' + bus24.busariv
+    fs.appendFile('data24.txt',data24,function(err,result) {
+      if(err) console.error(err);
+    })
+  } catch (error) {
+    console.error(error)
+    var strno =   '\n' + new Date() + ' --- No ' + selectedbus + ' bus found'
+    fs.appendFile('data24.txt',strno,function(err,result) {
+      if(err) console.error(err)
+    })
+  }
+
+  //clear buses array after every loop
+  buses = []
+  console.log('looped')
+  
+
+  
+}
+
+//execute main every amount of time defined
+main()
+const interval = setInterval(function() {
+  main()
+},20000)

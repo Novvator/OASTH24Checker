@@ -1,7 +1,8 @@
 //import libraries
 const puppet = require('puppeteer');
 const fs = require('fs');
-const { deepStrictEqual } = require('assert');
+
+// const { deepStrictEqual } = require('assert');
 
 //create buses array to store Bus objects
 var buses = [];
@@ -11,7 +12,14 @@ function Bus() {
   this.busname = '';
   this.busdet = '';
   this.busariv = '';
-}
+} 
+
+// let Bus = {
+//   busno: '',
+//   busname : '',
+//   busdet : '',
+//   busariv : ''
+// }
 
 
 async function scrapeProduct(url) {
@@ -62,8 +70,7 @@ async function scrapeProduct(url) {
     buses[i].busariv = await r4;
 
     
-    
-
+    // console.log("busno: ",busno);
 
   }
 
@@ -83,7 +90,7 @@ async function main(){
 
   //store 24 data exclusively
   try {
-    var selectedbus = '23'
+    var selectedbus = '24'
     var bus24 = buses.find(element => element.busno === selectedbus)
     var data24 = '\n' + new Date() + ' --- ' + bus24.busno + ' '  + bus24.busdet + ' ' + bus24.busariv
     fs.appendFile('data24.txt',data24,function(err,result) {
@@ -96,17 +103,17 @@ async function main(){
       if(err) console.error(err)
     })
   }
-
+  
   //clear buses array after every loop
   buses = []
-  console.log('looped')
-  
-
+  // console.log('looped')
+  console.log(document.querySelector("div"));
+  document.querySelector("#bus-list").innerHTML = data24
   
 }
 
 //execute main every amount of time defined
 main()
-const interval = setInterval(function() {
+const interval = setInterval(() => {
   main()
 },20000)
